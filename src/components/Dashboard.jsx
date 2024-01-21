@@ -159,137 +159,266 @@ const Dashboard = () => {
             console.log(error);
         }
     };
+
     return (
-        <div>
-            <button onClick={LogOut}>Log Out</button>
-
-            <div>
-                <input
-                    placeholder="First Name"
-                    type="text"
-                    value={newFirstName}
-                    onChange={(e) => setNewFirstName(e.target.value)}
-                />
-                <input
-                    placeholder="Last Name"
-                    type="text"
-                    value={newLastName}
-                    onChange={(e) => setNewLastName(e.target.value)}
-                />
-                <input
-                    placeholder="Gender"
-                    type="text"
-                    value={newGender}
-                    onChange={(e) => setNewGender(e.target.value)}
-                />
-                <input
-                    placeholder="Age"
-                    type="number"
-                    value={newAge}
-                    onChange={(e) => setNewAge(e.target.value)}
-                />
-                <input
-                    placeholder="Phone Number"
-                    type="tel"
-                    value={newPhoneNumber}
-                    onChange={(e) => setNewPhoneNumber(e.target.value)}
-                />
-                <input
-                    placeholder="Email"
-                    type="text"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                />
-                <select
-                    value={newInsuranceRate}
-                    onChange={(e) => setNewInsuranceRate(e.target.value)}
-                >
-                    <option value="">Select Insurance Rate</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Enhanced">Enhanced</option>
-                    <option value="Premium">Premium</option>
-                    <option value="Platinum">Platinum</option>
-                </select>
-                <button onClick={onAddClient}>Add Client</button>
+        <div className="flex min-h-screen bg-gray-100">
+            {/* Sidebar */}
+            <div className="w-1/5 bg-black text-white shadow-md">
+                <div className="pl-10 pt-20 flex flex-col justify-between h-full">
+                    <nav>
+                        <ul>
+                            <li className="p-3 hover:bg-gray-500">
+                                <a href="/dashboard">Dashboard</a>
+                            </li>
+                            <li className="p-3 hover:bg-gray-500">
+                                <a href="/dashboard">Customers</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
-
-            <div>
-                {showUpdateForm && (
+            {/* Main Content */}
+            <main className="w-4/5">
+                {/* Header */}
+                <div className="bg-white p-6 shadow-md flex justify-between items-center">
                     <div>
-                        <input
-                            placeholder="First Name"
-                            value={updatedFirstName}
-                            onChange={(e) =>
-                                setUpdatedFirstName(e.target.value)
-                            }
-                        />
-                        <input
-                            placeholder="Last Name"
-                            value={updatedLastName}
-                            onChange={(e) => setUpdatedLastName(e.target.value)}
-                        />
-                        <input
-                            placeholder="Gender"
-                            value={updatedGender}
-                            onChange={(e) => setUpdatedGender(e.target.value)}
-                        />
-                        <input
-                            placeholder="Age"
-                            type="number"
-                            value={updatedAge}
-                            onChange={(e) => setUpdatedAge(e.target.value)}
-                        />
-                        <input
-                            placeholder="Phone Number"
-                            type="tel"
-                            value={updatedPhoneNumber}
-                            onChange={(e) =>
-                                setUpdatedPhoneNumber(e.target.value)
-                            }
-                        />
-                        <input
-                            placeholder="Email"
-                            value={updatedEmail}
-                            onChange={(e) => setUpdatedEmail(e.target.value)}
-                        />
-                        <select
-                            value={updatedInsuranceRate}
-                            onChange={(e) =>
-                                setUpdatedInsuranceRate(e.target.value)
-                            }
+                        <h1 className="inline text-3xl font-bold text-gray-900 mr-6">
+                            Ins App
+                        </h1>
+                    </div>
+                    <button
+                        onClick={LogOut}
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                        Log Out
+                    </button>
+                </div>
+                {/* Content */}
+                <div className="container mx-auto px-4 pt-6">
+                    {/* Client Form */}
+                    <div className="bg-white rounded shadow-md p-6 mb-6">
+                        <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="text"
+                                placeholder="First name"
+                                value={newFirstName}
+                                onChange={(e) =>
+                                    setNewFirstName(e.target.value)
+                                }
+                            />
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="text"
+                                placeholder="Last name"
+                                value={newLastName}
+                                onChange={(e) => setNewLastName(e.target.value)}
+                            />
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="text"
+                                placeholder="Gender"
+                                value={newGender}
+                                onChange={(e) => setNewGender(e.target.value)}
+                            />
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="text"
+                                placeholder="Age"
+                                value={newAge}
+                                onChange={(e) => setNewAge(e.target.value)}
+                            />
+                        </div>
+                        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="text"
+                                placeholder="Phone Number"
+                                value={newPhoneNumber}
+                                onChange={(e) =>
+                                    setNewPhoneNumber(e.target.value)
+                                }
+                            />
+                            <input
+                                className="border-2 p-2 rounded"
+                                type="email"
+                                placeholder="Email"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                            />
+                            <select
+                                className="border-2 p-2 rounded"
+                                value={newInsuranceRate}
+                                onChange={(e) =>
+                                    setNewInsuranceRate(e.target.value)
+                                }
+                            >
+                                <option value="">Select Insurance Rate</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Enhanced">Enhanced</option>
+                                <option value="Premium">Premium</option>
+                                <option value="Platinum">Platinum</option>
+                            </select>
+                        </div>
+                        <button
+                            onClick={onAddClient}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                         >
-                            <option value="">Select Insurance Rate</option>
-                            <option value="Standard">Standard</option>
-                            <option value="Enhanced">Enhanced</option>
-                            <option value="Premium">Premium</option>
-                            <option value="Platinum">Platinum</option>
-                        </select>
-
-                        <button onClick={updateClient}>Save</button>
-                    </div>
-                )}
-            </div>
-
-            <div>
-                {clientsList.map((client) => (
-                    <div key={client.id}>
-                        <p>{client.firstName}</p>
-                        <p>{client.lastName}</p>
-                        <p>{client.gender}</p>
-                        <p>{client.age}</p>
-                        <p>{client.phoneNumber}</p>
-                        <p>{client.email}</p>
-                        <p>{client.insuranceRate}</p>
-
-                        <button onClick={() => openUpdateForm(client)}>
-                            Update Client
-                        </button>
-                        <button onClick={() => deleteClient(client.id)}>
-                            Delete Client
+                            Add Client
                         </button>
                     </div>
-                ))}
-            </div>
+                    {/* Update Client Form */}
+                    {showUpdateForm && (
+                        <div className="bg-white rounded shadow-md p-6 mb-6">
+                            <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="text"
+                                    placeholder="First Name"
+                                    value={updatedFirstName}
+                                    onChange={(e) =>
+                                        setUpdatedFirstName(e.target.value)
+                                    }
+                                />
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="text"
+                                    placeholder="Last Name"
+                                    value={updatedLastName}
+                                    onChange={(e) =>
+                                        setUpdatedLastName(e.target.value)
+                                    }
+                                />
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="text"
+                                    placeholder="Gender"
+                                    value={updatedGender}
+                                    onChange={(e) =>
+                                        setUpdatedGender(e.target.value)
+                                    }
+                                />
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="number"
+                                    placeholder="Age"
+                                    value={updatedAge}
+                                    onChange={(e) =>
+                                        setUpdatedAge(e.target.value)
+                                    }
+                                />
+                            </div>
+                            <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="tel"
+                                    placeholder="Phone Number"
+                                    value={updatedPhoneNumber}
+                                    onChange={(e) =>
+                                        setUpdatedPhoneNumber(e.target.value)
+                                    }
+                                />
+                                <input
+                                    className="border-2 p-2 rounded"
+                                    type="email"
+                                    placeholder="Email"
+                                    value={updatedEmail}
+                                    onChange={(e) =>
+                                        setUpdatedEmail(e.target.value)
+                                    }
+                                />
+                                <select
+                                    className="border-2 p-2 rounded"
+                                    value={updatedInsuranceRate}
+                                    onChange={(e) =>
+                                        setUpdatedInsuranceRate(e.target.value)
+                                    }
+                                >
+                                    <option value="">
+                                        Select Insurance Rate
+                                    </option>
+                                    <option value="Standard">Standard</option>
+                                    <option value="Enhanced">Enhanced</option>
+                                    <option value="Premium">Premium</option>
+                                    <option value="Platinum">Platinum</option>
+                                </select>
+                            </div>
+                            <button
+                                onClick={updateClient}
+                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                                Save
+                            </button>
+                        </div>
+                    )}
+                    {/* Clients List */}
+                    <div className="bg-white rounded shadow-md p-6 overflow-x-auto">
+                        <table className="min-w-full leading-normal">
+                            <thead>
+                                <tr>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Name
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Gender
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Age
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Email
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Phone number
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clientsList.map((client) => (
+                                    <tr key={client.id}>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.firstName} {client.lastName}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.gender}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.age}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.email}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.phoneNumber}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            <button
+                                                onClick={() =>
+                                                    openUpdateForm(client)
+                                                }
+                                                className="text-blue-600 hover:text-blue-800 mr-2"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    deleteClient(client.id)
+                                                }
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
         </div>
     );
 };
