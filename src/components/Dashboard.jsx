@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../config/firebase-config';
+import { auth, db, storage } from '../config/firebase-config';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { db } from '../config/firebase-config';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     collection,
     getDocs,
@@ -12,7 +11,10 @@ import {
     updateDoc,
     query,
     where,
+    setDoc,
+    getDoc,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -39,7 +41,15 @@ const Dashboard = () => {
     const [updatedEmail, setUpdatedEmail] = useState('');
     const [updatedInsuranceRate, setUpdatedInsuranceRate] = useState('');
 
+    // File Upload State
+    const [fileUpload, setFileUpload] = useState(null);
+
+    // Avatar URL State
+    const [avatarUrl, setAvatarUrl] = useState('');
+
     const clientsCollectionRef = collection(db, 'clients');
+
+    const fileInputRef = useRef(null);
 
     const getClientsList = async () => {
         const userUid = auth.currentUser.uid; // Get the current user's UID
@@ -59,11 +69,24 @@ const Dashboard = () => {
         }
     };
 
+    const fetchAvatarUrl = async () => {
+        if (auth.currentUser) {
+            const userDocRef = doc(db, 'userProfiles', auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                setAvatarUrl(userDocSnap.data().avatarUrl);
+            }
+        }
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
+                fetchAvatarUrl();
                 getClientsList(); // Call this when the user is signed in
             } else {
+                setAvatarUrl('');
                 setClientsList([]); // Clear the list when the user signs out
             }
         });
@@ -151,6 +174,45 @@ const Dashboard = () => {
         }
     };
 
+    const handleFileInputChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFileUpload(file);
+        }
+    };
+
+    const uploadFile = async () => {
+        if (!fileUpload) return;
+
+        const storageRef = ref(
+            storage,
+            `avatars/${auth.currentUser.uid}/${fileUpload.name}`
+        );
+        try {
+            const snapshot = await uploadBytes(storageRef, fileUpload);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            setAvatarUrl(downloadURL);
+
+            // Saving URLs in Firestore in a user document
+            const userDocRef = doc(db, 'userProfiles', auth.currentUser.uid);
+            await setDoc(
+                userDocRef,
+                { avatarUrl: downloadURL },
+                { merge: true }
+            );
+
+            console.log('Uploaded file and got download URL:', downloadURL);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (fileUpload) {
+            uploadFile();
+        }
+    }, [fileUpload]);
+
     const LogOut = async () => {
         try {
             await signOut(auth);
@@ -180,12 +242,32 @@ const Dashboard = () => {
             {/* Main Content */}
             <main className="w-4/5">
                 {/* Header */}
-                <div className="bg-white p-6 shadow-md flex justify-between items-center">
+                <div className="bg-white p-6 shadow-md flex justify-between items-center h-24">
                     <div>
                         <h1 className="inline text-3xl font-bold text-gray-900 mr-6">
                             Ins App
                         </h1>
                     </div>
+                    <label htmlFor="avatar-upload" className="cursor-pointer">
+                        {avatarUrl ? (
+                            <img
+                                src={avatarUrl}
+                                alt="Avatar"
+                                className="inline-block h-20 w-20 rounded-full mr-4"
+                            />
+                        ) : (
+                            <div className="hover:text-blue-700 text-blue-500 font-bold py-2 px-4 rounded">
+                                Add photo
+                            </div>
+                        )}
+                    </label>
+                    <input
+                        id="avatar-upload"
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileInputChange}
+                        hidden
+                    />
                     <button
                         onClick={LogOut}
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
