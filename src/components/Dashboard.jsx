@@ -15,6 +15,7 @@ import {
     getDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as XLSX from 'xlsx';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -50,6 +51,8 @@ const Dashboard = () => {
     const clientsCollectionRef = collection(db, 'clients');
 
     const fileInputRef = useRef(null);
+
+    const excelFileInputRef = useRef(null);
 
     const getClientsList = async () => {
         const userUid = auth.currentUser.uid; // Get the current user's UID
@@ -102,7 +105,7 @@ const Dashboard = () => {
                 lastName: newLastName,
                 gender: newGender,
                 age: parseInt(newAge, 10),
-                phoneNumber: parseInt(newPhoneNumber, 10),
+                phoneNumber: newPhoneNumber.toString(),
                 email: newEmail,
                 insuranceRate: newInsuranceRate,
                 userId: auth.currentUser.uid,
@@ -213,6 +216,66 @@ const Dashboard = () => {
         }
     }, [fileUpload]);
 
+    const handleExcelFileInputChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Process the Excel file
+            processExcelFile(file);
+        }
+    };
+
+    const processExcelFile = (file) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const binaryStr = e.target.result;
+            const workbook = XLSX.read(binaryStr, {
+                type: 'binary',
+                cellDates: true,
+                dateNF: 'yyyy-mm-dd',
+            });
+            const worksheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[worksheetName];
+
+            const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            console.log('Raw JSON data', rawJson);
+
+            // The headers are in the second element of the array, which has an index of 1
+            const headers = rawJson[1];
+            console.log('Headers', headers);
+
+            // Data starts from the third element in the array, which has an index of 2
+            const dataRows = rawJson.slice(2);
+            console.log('Data rows', dataRows);
+
+            for (const data of dataRows) {
+                if (data.length === 0) continue; // Skip empty rows
+
+                const newDoc = {
+                    firstName: data[1] || '', // Index must match the column for firstName
+                    lastName: data[2] || '', // Index must match the column for lastName
+                    gender: data[3] || '', // Index must match the column for gender
+                    age: parseInt(data[4], 10), // Ensure this is a number
+                    phoneNumber: data[5] ? data[5].toString() : '', // Convert to string if not empty
+                    email: data[6] || '', // Index must match the column for email
+                    insuranceRate: data[7] || '', // Index must match the column for insuranceRate
+                    userId: auth.currentUser.uid,
+                };
+
+                // Log the document to be added to Firestore
+                console.log('New Document', newDoc);
+
+                try {
+                    await addDoc(clientsCollectionRef, newDoc);
+                } catch (error) {
+                    console.error('Error adding document:', error);
+                }
+            }
+
+            getClientsList(); // Refresh the client list
+        };
+        reader.readAsBinaryString(file);
+    };
+
     const LogOut = async () => {
         try {
             await signOut(auth);
@@ -268,6 +331,16 @@ const Dashboard = () => {
                         onChange={handleFileInputChange}
                         hidden
                     />
+                    <input
+                        type="file"
+                        ref={excelFileInputRef}
+                        onChange={handleExcelFileInputChange}
+                        accept=".xlsx, .xls"
+                        hidden
+                    />
+                    <button onClick={() => excelFileInputRef.current.click()}>
+                        Upload Excel File
+                    </button>
                     <button
                         onClick={LogOut}
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
@@ -451,7 +524,10 @@ const Dashboard = () => {
                                         Email
                                     </th>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
-                                        Phone number
+                                        Phone Number
+                                    </th>
+                                    <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
+                                        Insurance Rate
                                     </th>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
                                         Actions
@@ -475,6 +551,9 @@ const Dashboard = () => {
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
                                             {client.phoneNumber}
+                                        </td>
+                                        <td className="border-b border-gray-200 px-4 py-3">
+                                            {client.insuranceRate}
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
                                             <button
