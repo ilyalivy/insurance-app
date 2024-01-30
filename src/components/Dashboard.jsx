@@ -48,6 +48,26 @@ const Dashboard = () => {
     // Avatar URL State
     const [avatarUrl, setAvatarUrl] = useState('');
 
+    // New state for company selection and expected columns
+    const [selectedCompany, setSelectedCompany] = useState('');
+    const [expectedColumns, setExpectedColumns] = useState({});
+
+    // Mapping of companies to their expected Excel file structures
+    const companyFileStructures = {
+        'Company A': {
+            'Customer Name': 'firstName',
+            'Name Last': 'lastName',
+            'Customer gender': 'gender',
+            'Customer age': 'age',
+            'Customer phone number': 'phoneNumber',
+            'Customer e-mail': 'email',
+            'Customer ins rate': 'insuranceRate',
+        },
+        'Company B': {
+            'Name of customer': 'firstName',
+        },
+    };
+
     const clientsCollectionRef = collection(db, 'clients');
 
     const fileInputRef = useRef(null);
@@ -216,15 +236,28 @@ const Dashboard = () => {
         }
     }, [fileUpload]);
 
+    const handleCompanySelection = (company) => {
+        setSelectedCompany(company);
+        setExpectedColumns(companyFileStructures[company] || {});
+    };
+
     const handleExcelFileInputChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             // Process the Excel file
             processExcelFile(file);
         }
+        // Clear the value of the input after processing
+        e.target.value = null;
     };
 
     const processExcelFile = (file) => {
+        if (!selectedCompany) {
+            console.error('No company selected.');
+            alert('Please select a company before uploading an Excel file.');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = async (e) => {
             const binaryStr = e.target.result;
@@ -243,23 +276,56 @@ const Dashboard = () => {
             const headers = rawJson[1];
             console.log('Headers', headers);
 
+            // Validate if the Excel file matches the selected company's expected structure
+            const expectedHeaders = Object.keys(
+                companyFileStructures[selectedCompany]
+            );
+            const isHeaderValid = expectedHeaders.every((header) =>
+                headers.includes(header)
+            );
+
+            if (!isHeaderValid) {
+                console.error(
+                    'Excel file headers do not match the expected headers for the selected company.'
+                );
+                alert(
+                    'The uploaded Excel file does not match the selected company’s format.'
+                );
+                return;
+            }
+
             // Data starts from the third element in the array, which has an index of 2
             const dataRows = rawJson.slice(2);
             console.log('Data rows', dataRows);
 
+            // Find the index of each column based on the headers
+            const columnIndexes = {};
+            headers.forEach((header, index) => {
+                if (expectedColumns[header]) {
+                    columnIndexes[expectedColumns[header]] = index;
+                }
+            });
+
             for (const data of dataRows) {
                 if (data.length === 0) continue; // Skip empty rows
 
-                const newDoc = {
-                    firstName: data[1] || '', // Index must match the column for firstName
-                    lastName: data[2] || '', // Index must match the column for lastName
-                    gender: data[3] || '', // Index must match the column for gender
-                    age: parseInt(data[4], 10), // Ensure this is a number
-                    phoneNumber: data[5] ? data[5].toString() : '', // Convert to string if not empty
-                    email: data[6] || '', // Index must match the column for email
-                    insuranceRate: data[7] || '', // Index must match the column for insuranceRate
-                    userId: auth.currentUser.uid,
-                };
+                const newDoc = {};
+                for (const [field, index] of Object.entries(columnIndexes)) {
+                    if (field === 'age') {
+                        // Convert age to a number
+                        newDoc[field] = parseInt(data[index], 10) || null; // Use null for non-numeric values
+                    } else if (field === 'phoneNumber') {
+                        // Convert phoneNumber to a string
+                        newDoc[field] = data[index]
+                            ? data[index].toString()
+                            : '';
+                    } else {
+                        // Handle other fields as strings
+                        newDoc[field] = data[index] || '';
+                    }
+                }
+
+                newDoc['userId'] = auth.currentUser.uid;
 
                 // Log the document to be added to Firestore
                 console.log('New Document', newDoc);
@@ -273,6 +339,11 @@ const Dashboard = () => {
 
             getClientsList(); // Refresh the client list
         };
+
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+        };
+
         reader.readAsBinaryString(file);
     };
 
@@ -331,6 +402,15 @@ const Dashboard = () => {
                         onChange={handleFileInputChange}
                         hidden
                     />
+                    <select
+                        className="border-2 p-2 rounded mb-4"
+                        value={selectedCompany}
+                        onChange={(e) => handleCompanySelection(e.target.value)}
+                    >
+                        <option value="">Select Company</option>
+                        <option value="Company A">Company A</option>
+                        <option value="Company B">Company B</option>
+                    </select>
                     <input
                         type="file"
                         ref={excelFileInputRef}
