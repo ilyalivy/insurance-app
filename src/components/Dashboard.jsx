@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as XLSX from 'xlsx';
+import CompanyForm from './CompanyForm';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -51,22 +52,6 @@ const Dashboard = () => {
     // New state for company selection and expected columns
     const [selectedCompany, setSelectedCompany] = useState('');
     const [expectedColumns, setExpectedColumns] = useState({});
-
-    // Mapping of companies to their expected Excel file structures
-    const companyFileStructures = {
-        'Company A': {
-            'Customer Name': 'firstName',
-            'Name Last': 'lastName',
-            'Customer gender': 'gender',
-            'Customer age': 'age',
-            'Customer phone number': 'phoneNumber',
-            'Customer e-mail': 'email',
-            'Customer ins rate': 'insuranceRate',
-        },
-        'Company B': {
-            'Name of customer': 'firstName',
-        },
-    };
 
     const clientsCollectionRef = collection(db, 'clients');
 
@@ -236,11 +221,6 @@ const Dashboard = () => {
         }
     }, [fileUpload]);
 
-    const handleCompanySelection = (company) => {
-        setSelectedCompany(company);
-        setExpectedColumns(companyFileStructures[company] || {});
-    };
-
     const handleExcelFileInputChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -252,12 +232,6 @@ const Dashboard = () => {
     };
 
     const processExcelFile = (file) => {
-        if (!selectedCompany) {
-            console.error('No company selected.');
-            alert('Please select a company before uploading an Excel file.');
-            return;
-        }
-
         const reader = new FileReader();
         reader.onload = async (e) => {
             const binaryStr = e.target.result;
@@ -269,63 +243,127 @@ const Dashboard = () => {
             const worksheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[worksheetName];
 
-            const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            console.log('Raw JSON data', rawJson);
+            // Get data and headers directly from worksheet instead of using sheet_to_json
+            const data = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1, // Receive data as an array of arrays
+                blankrows: false, // Ignore empty lines
+            });
 
-            // The headers are in the second element of the array, which has an index of 1
-            const headers = rawJson[1];
+            // The first line contains the headers
+            const headers = data[0].filter((header) => header != null);
+            
             console.log('Headers', headers);
 
-            // Validate if the Excel file matches the selected company's expected structure
-            const expectedHeaders = Object.keys(
-                companyFileStructures[selectedCompany]
+            // Fetch company file structures from Firestore
+            const companyFileStructuresRef = collection(
+                db,
+                'companyFileStructures'
             );
-            const isHeaderValid = expectedHeaders.every((header) =>
-                headers.includes(header)
+            const companyStructuresSnap = await getDocs(
+                companyFileStructuresRef
             );
 
-            if (!isHeaderValid) {
+            // Convert the snapshot to a map of company names to their structures
+            const companyStructuresMap = companyStructuresSnap.docs.reduce(
+                (acc, doc) => {
+                    const data = doc.data();
+                    acc[data.companyName] = data.fileStructure;
+                    return acc;
+                },
+                {}
+            );
+
+           // Output file structures obtained from Firestore
+            console.log(
+                'Company Structures from Firestore:',
+                companyStructuresMap
+            );
+
+            // Auto-detection of the company format
+            let detectedCompany = null;
+            let expectedColumns = {};
+
+            for (const [company, structure] of Object.entries(
+                companyStructuresMap
+            )) {
+                // Convert structure from Firestore format back to local format
+                const structureConverted = Object.fromEntries(
+                    Object.entries(structure).map(
+                        ([excelHeader, fieldName]) => [fieldName, excelHeader]
+                    )
+                );
+
+                const expectedHeaders = Object.values(structureConverted);
+                const isHeaderValid = expectedHeaders.every((header) =>
+                    headers.includes(header)
+                );
+
+                if (isHeaderValid) {
+                    detectedCompany = company;
+                    expectedColumns = structureConverted;
+                    break;
+                }
+            }
+
+            // Output the converted file structure
+            console.log(
+                `Structure for detected company (${detectedCompany}):`,
+                expectedColumns
+            );
+
+            if (!detectedCompany) {
                 console.error(
-                    'Excel file headers do not match the expected headers for the selected company.'
+                    'Unable to detect the company from the Excel file.'
                 );
                 alert(
-                    'The uploaded Excel file does not match the selected company’s format.'
+                    'The format of the uploaded Excel file is not recognized.'
                 );
                 return;
             }
 
+            console.log(`Detected company: ${detectedCompany}`);
+
             // Data starts from the third element in the array, which has an index of 2
-            const dataRows = rawJson.slice(2);
+            const dataRows = data.slice(1);
             console.log('Data rows', dataRows);
 
-            // Find the index of each column based on the headers
+            // Next we use headers to create columnIndexes
             const columnIndexes = {};
             headers.forEach((header, index) => {
-                if (expectedColumns[header]) {
-                    columnIndexes[expectedColumns[header]] = index;
+                const fieldName = Object.keys(expectedColumns).find(
+                    (key) => expectedColumns[key] === header
+                );
+                if (fieldName) {
+                    columnIndexes[fieldName] = index;
                 }
             });
 
-            for (const data of dataRows) {
-                if (data.length === 0) continue; // Skip empty rows
+            console.log('Column indexes based on headers:', columnIndexes);
 
-                const newDoc = {};
-                for (const [field, index] of Object.entries(columnIndexes)) {
-                    if (field === 'age') {
-                        // Convert age to a number
-                        newDoc[field] = parseInt(data[index], 10) || null; // Use null for non-numeric values
-                    } else if (field === 'phoneNumber') {
-                        // Convert phoneNumber to a string
-                        newDoc[field] = data[index]
-                            ? data[index].toString()
-                            : '';
-                    } else {
-                        // Handle other fields as strings
-                        newDoc[field] = data[index] || '';
-                    }
+            for (const rowData of dataRows) {
+                if (rowData.length === 0) continue; // Skip empty lines
+
+                const newDoc = {
+                    userId: auth.currentUser.uid, // This field is common to everyone
+                    // Default values for all other fields
+                    firstName: '',
+                    lastName: '',
+                    gender: '',
+                    age: '',
+                    phoneNumber: '',
+                    email: '',
+                    insuranceRate: '',
+                };
+                for (const [fieldName, columnIndex] of Object.entries(
+                    columnIndexes
+                )) {
+                    // Since these data rows are an array with one element in the video object,
+                    // where the key object corresponds to the column index, the result is accessed through this key.
+                    // So we need to use Object.values(rowData)[columnIndex] to get the values.
+                    const cellValue = Object.values(rowData)[columnIndex];
+                    newDoc[fieldName] =
+                        cellValue != null ? cellValue.toString() : '';
                 }
-
-                newDoc['userId'] = auth.currentUser.uid;
 
                 // Log the document to be added to Firestore
                 console.log('New Document', newDoc);
@@ -402,15 +440,6 @@ const Dashboard = () => {
                         onChange={handleFileInputChange}
                         hidden
                     />
-                    <select
-                        className="border-2 p-2 rounded mb-4"
-                        value={selectedCompany}
-                        onChange={(e) => handleCompanySelection(e.target.value)}
-                    >
-                        <option value="">Select Company</option>
-                        <option value="Company A">Company A</option>
-                        <option value="Company B">Company B</option>
-                    </select>
                     <input
                         type="file"
                         ref={excelFileInputRef}
@@ -430,6 +459,7 @@ const Dashboard = () => {
                 </div>
                 {/* Content */}
                 <div className="container mx-auto px-4 pt-6">
+                    <CompanyForm />
                     {/* Client Form */}
                     <div className="bg-white rounded shadow-md p-6 mb-6">
                         <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -587,7 +617,7 @@ const Dashboard = () => {
                         </div>
                     )}
                     {/* Clients List */}
-                    <div className="bg-white rounded shadow-md p-6 overflow-x-auto">
+                    <div className="bg-white rounded shadow-md p-6 overflow-x-auto mb-6">
                         <table className="min-w-full leading-normal">
                             <thead>
                                 <tr>
