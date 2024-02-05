@@ -49,10 +49,6 @@ const Dashboard = () => {
     // Avatar URL State
     const [avatarUrl, setAvatarUrl] = useState('');
 
-    // New state for company selection and expected columns
-    const [selectedCompany, setSelectedCompany] = useState('');
-    const [expectedColumns, setExpectedColumns] = useState({});
-
     const clientsCollectionRef = collection(db, 'clients');
 
     const fileInputRef = useRef(null);
@@ -103,7 +99,8 @@ const Dashboard = () => {
         return unsubscribe;
     }, []);
 
-    const onAddClient = async () => {
+    const onAddClient = async (event) => {
+        event.preventDefault();
         try {
             await addDoc(clientsCollectionRef, {
                 firstName: newFirstName,
@@ -154,8 +151,10 @@ const Dashboard = () => {
         setShowUpdateForm(true);
     };
 
-    const updateClient = async () => {
+    const updateClient = async (event) => {
+        event.preventDefault();
         const clientDoc = doc(db, 'clients', updateId);
+        
         try {
             await updateDoc(clientDoc, {
                 firstName: updatedFirstName,
@@ -166,6 +165,7 @@ const Dashboard = () => {
                 email: updatedEmail,
                 insuranceRate: updatedInsuranceRate,
             });
+
             getClientsList();
             setShowUpdateForm(false);
             setUpdateId(null);
@@ -251,7 +251,7 @@ const Dashboard = () => {
 
             // The first line contains the headers
             const headers = data[0].filter((header) => header != null);
-            
+
             console.log('Headers', headers);
 
             // Fetch company file structures from Firestore
@@ -273,7 +273,7 @@ const Dashboard = () => {
                 {}
             );
 
-           // Output file structures obtained from Firestore
+            // Output file structures obtained from Firestore
             console.log(
                 'Company Structures from Firestore:',
                 companyStructuresMap
@@ -461,7 +461,10 @@ const Dashboard = () => {
                 <div className="container mx-auto px-4 pt-6">
                     <CompanyForm />
                     {/* Client Form */}
-                    <div className="bg-white rounded shadow-md p-6 mb-6">
+                    <form
+                        onSubmit={onAddClient}
+                        className="bg-white rounded shadow-md p-6 mb-6"
+                    >
                         <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                             <input
                                 className="border-2 p-2 rounded"
@@ -525,16 +528,16 @@ const Dashboard = () => {
                                 <option value="Platinum">Platinum</option>
                             </select>
                         </div>
-                        <button
-                            onClick={onAddClient}
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        >
+                        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Add Client
                         </button>
-                    </div>
+                    </form>
                     {/* Update Client Form */}
                     {showUpdateForm && (
-                        <div className="bg-white rounded shadow-md p-6 mb-6">
+                        <form
+                            onSubmit={updateClient}
+                            className="bg-white rounded shadow-md p-6 mb-6"
+                        >
                             <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <input
                                     className="border-2 p-2 rounded"
@@ -608,18 +611,15 @@ const Dashboard = () => {
                                     <option value="Platinum">Platinum</option>
                                 </select>
                             </div>
-                            <button
-                                onClick={updateClient}
-                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                            >
+                            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                                 Save
                             </button>
-                        </div>
+                        </form>
                     )}
                     {/* Clients List */}
                     <div className="bg-white rounded shadow-md p-6 overflow-x-auto mb-6">
                         <table className="min-w-full leading-normal">
-                            <thead>
+                            <thead className="whitespace-nowrap">
                                 <tr>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
                                         Name
@@ -631,10 +631,10 @@ const Dashboard = () => {
                                         Age
                                     </th>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
-                                        Email
+                                        Phone Number
                                     </th>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
-                                        Phone Number
+                                        Email
                                     </th>
                                     <th className="border-b border-gray-200 text-gray-800 px-4 py-3 text-left">
                                         Insurance Rate
@@ -647,7 +647,7 @@ const Dashboard = () => {
                             <tbody>
                                 {clientsList.map((client) => (
                                     <tr key={client.id}>
-                                        <td className="border-b border-gray-200 px-4 py-3">
+                                        <td className="border-b border-gray-200 px-4 py-3 whitespace-nowrap">
                                             {client.firstName} {client.lastName}
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
@@ -657,15 +657,15 @@ const Dashboard = () => {
                                             {client.age}
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
-                                            {client.email}
+                                            {client.phoneNumber}
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
-                                            {client.phoneNumber}
+                                            {client.email}
                                         </td>
                                         <td className="border-b border-gray-200 px-4 py-3">
                                             {client.insuranceRate}
                                         </td>
-                                        <td className="border-b border-gray-200 px-4 py-3">
+                                        <td className="border-b border-gray-200 px-4 py-3 whitespace-nowrap">
                                             <button
                                                 onClick={() =>
                                                     openUpdateForm(client)
