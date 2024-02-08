@@ -1,17 +1,7 @@
 import { useEffect, useState } from 'react';
-import { db } from '../config/firebase-config';
-import {
-    collection,
-    getDocs,
-    addDoc,
-    deleteDoc,
-    doc,
-    updateDoc,
-} from 'firebase/firestore';
+import useFirestore from '../hooks/useFirestore';
 
-const CompanyForm = () => {
-    const [companiesList, setCompaniesList] = useState([]);
-
+const CompanyForm = ({ companiesList, setCompaniesList }) => {
     // State for the Add Company form
     const [companyName, setCompanyName] = useState('');
     const [excelHeaders, setExcelHeaders] = useState({
@@ -40,22 +30,21 @@ const CompanyForm = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingCompany, setEditingCompany] = useState(null);
 
-    const getCompaniesList = async () => {
-        const companyFileStructuresRef = collection(
-            db,
-            'companyFileStructures'
-        );
-        try {
-            const data = await getDocs(companyFileStructuresRef);
-            const filteredData = data.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            }));
-            setCompaniesList(filteredData);
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    const { getCompaniesList, onAddCompany, deleteCompany, updateCompany } =
+        useFirestore({
+            setCompaniesList,
+            companyName,
+            setCompanyName,
+            excelHeaders,
+            setExcelHeaders,
+            editCompanyName,
+            setEditCompanyName,
+            editExcelHeaders,
+            setEditExcelHeaders,
+            setIsEditing,
+            editingCompany,
+            setEditingCompany,
+        });
 
     useEffect(() => {
         getCompaniesList(); // Call this to get the companies
@@ -70,63 +59,6 @@ const CompanyForm = () => {
             ...excelHeaders,
             [key]: event.target.value,
         });
-    };
-
-    const onAddCompany = async (event) => {
-        event.preventDefault();
-        const companyFileStructuresRef = collection(
-            db,
-            'companyFileStructures'
-        );
-
-        // Create a mapping object for Firestore, skipping empty header names
-        const firestoreStructure = {};
-        for (const [key, value] of Object.entries(excelHeaders)) {
-            if (key.trim() !== '' && value.trim() !== '') {
-                // Only add the entry if both the key and value are not empty
-                firestoreStructure[value.trim()] = key;
-            }
-        }
-
-        // Check if the structure is empty
-        if (Object.keys(firestoreStructure).length === 0) {
-            console.error('Cannot add empty file structure.');
-            return;
-        }
-
-        try {
-            await addDoc(companyFileStructuresRef, {
-                companyName: companyName,
-                fileStructure: firestoreStructure,
-            });
-
-            getCompaniesList();
-
-            setCompanyName('');
-            setExcelHeaders({
-                firstName: '',
-                lastName: '',
-                gender: '',
-                age: '',
-                phoneNumber: '',
-                email: '',
-                insuranceRate: '',
-            });
-        } catch (error) {
-            console.error('Error adding company file structure: ', error);
-        }
-    };
-
-    const deleteCompany = async (id) => {
-        const companyDocRef = doc(db, 'companyFileStructures', id);
-        try {
-            await deleteDoc(companyDocRef);
-            setCompaniesList(
-                companiesList.filter((company) => company.id !== id)
-            );
-        } catch (error) {
-            console.error(error);
-        }
     };
 
     const headerOrder = [
@@ -161,49 +93,6 @@ const CompanyForm = () => {
             ...prevHeaders,
             [key]: event.target.value,
         }));
-    };
-
-    const updateCompany = async (event) => {
-        event.preventDefault();
-        const companyDocRef = doc(
-            db,
-            'companyFileStructures',
-            editingCompany.id
-        );
-
-        const updatedStructure = Object.entries(editExcelHeaders).reduce(
-            (acc, [header, value]) => {
-                if (value.trim() !== '') {
-                    acc[value.trim()] = header;
-                }
-                return acc;
-            },
-            {}
-        );
-
-        try {
-            await updateDoc(companyDocRef, {
-                companyName: editCompanyName,
-                fileStructure: updatedStructure,
-            });
-
-            getCompaniesList();
-            setIsEditing(false);
-            setEditingCompany(null);
-
-            setEditCompanyName('');
-            setEditExcelHeaders({
-                firstName: '',
-                lastName: '',
-                gender: '',
-                age: '',
-                phoneNumber: '',
-                email: '',
-                insuranceRate: '',
-            });
-        } catch (error) {
-            console.error(error);
-        }
     };
 
     return (

@@ -10,6 +10,7 @@ import useAuthState from '../hooks/useAuthState';
 
 const Dashboard = () => {
     const [clientsList, setClientsList] = useState([]);
+    const [companiesList, setCompaniesList] = useState([]);
 
     const clientsCollectionRef = collection(db, 'clients');
 
@@ -207,7 +208,10 @@ const Dashboard = () => {
                 />
                 {/* Content */}
                 <div className="container mx-auto px-4 pt-6">
-                    <CompanyForm />
+                    <CompanyForm
+                        companiesList={companiesList}
+                        setCompaniesList={setCompaniesList}
+                    />
                     <ClientForm
                         clientsList={clientsList}
                         setClientsList={setClientsList}

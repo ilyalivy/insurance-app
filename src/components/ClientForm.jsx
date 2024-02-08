@@ -2,8 +2,7 @@ import { useState } from 'react';
 import useFirestore from '../hooks/useFirestore';
 import useAuthState from '../hooks/useAuthState';
 
-const ClientForm = ({clientsList, setClientsList}) => {
-   
+const ClientForm = ({ clientsList, setClientsList }) => {
     const [newClientData, setNewClientData] = useState({
         firstName: '',
         lastName: '',
@@ -25,24 +24,34 @@ const ClientForm = ({clientsList, setClientsList}) => {
     });
     const [showUpdateForm, setShowUpdateForm] = useState(false);
 
-    const {
-        getClientsList,
-        onAddClient,
-        deleteClient,
-        openUpdateForm,
-        updateClient,
-    } = useFirestore({
-        setClientsList,
-        newClientData,
-        setNewClientData,
-        updateId,
-        setUpdateId,
-        updatedClientData,
-        setUpdatedClientData,
-        setShowUpdateForm,
-    });
+    const { getClientsList, onAddClient, deleteClient, updateClient } =
+        useFirestore({
+            setClientsList,
+            newClientData,
+            setNewClientData,
+            updateId,
+            setUpdateId,
+            updatedClientData,
+            setUpdatedClientData,
+            setShowUpdateForm,
+        });
 
     useAuthState(getClientsList, setClientsList);
+
+    const openUpdateForm = (client) => {
+        setUpdateId(client.id);
+        setUpdatedClientData({
+            firstName: client.firstName,
+            lastName: client.lastName,
+            gender: client.gender,
+            age: client.age,
+            phoneNumber: client.phoneNumber,
+            email: client.email,
+            insuranceRate: client.insuranceRate,
+        });
+
+        setShowUpdateForm(true);
+    };
 
     return (
         <div>
