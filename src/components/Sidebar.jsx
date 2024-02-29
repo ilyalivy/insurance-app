@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const Sidebar = () => {
     return (
         <div className="w-1/5 bg-black text-white shadow-md">
@@ -5,10 +7,10 @@ const Sidebar = () => {
                 <nav>
                     <ul>
                         <li className="p-3 hover:bg-gray-500">
-                            <a href="/dashboard">Dashboard</a>
+                            <Link to="/dashboard">Dashboard</Link>
                         </li>
                         <li className="p-3 hover:bg-gray-500">
-                            <a href="/dashboard">Customers</a>
+                            <Link to="/customers">Customers</Link>
                         </li>
                     </ul>
                 </nav>

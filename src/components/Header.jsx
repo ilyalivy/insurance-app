@@ -1,8 +1,8 @@
-import AvatarUploader from "./AvatarUploader";
-import ExcelFileUploader from "./ExcelFileUploader";
-import LogOut from "./LogOut";
+import AvatarUploader from './AvatarUploader';
+import ExcelFileUploader from './ExcelFileUploader';
+import LogOut from './LogOut';
 
-const Header = ({handleExcelFileInputChange}) => {
+const Header = ({ setClientsList, showExcelUploader }) => {
     return (
         <div className="bg-white p-6 shadow-md flex justify-between items-center h-24">
             <div>
@@ -11,9 +11,9 @@ const Header = ({handleExcelFileInputChange}) => {
                 </h1>
             </div>
             <AvatarUploader />
-            <ExcelFileUploader
-                handleExcelFileInputChange={handleExcelFileInputChange}
-            />
+            {showExcelUploader && (
+                <ExcelFileUploader setClientsList={setClientsList} />
+            )}
             <LogOut />
         </div>
     );

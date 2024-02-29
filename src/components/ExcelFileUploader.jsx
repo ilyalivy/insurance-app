@@ -1,7 +1,9 @@
 import { useRef } from 'react';
+import useExcelFile from '../hooks/useExcelFile';
 
-const ExcelFileUploader = ({ handleExcelFileInputChange }) => {
+const ExcelFileUploader = ({ setClientsList }) => {
     const excelFileInputRef = useRef(null);
+    const { handleExcelFileInputChange } = useExcelFile(setClientsList);
 
     return (
         <div>
